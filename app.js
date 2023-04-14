@@ -96,11 +96,38 @@ app.get("/logout", function(req, res){
     
 });
 
-app.get("/secrets", function(req, res){
+app.get("/secrets", async function(req, res){
+    try {
+        const foundUsers = await User.find({"secret": {$ne: null}})
+        if(foundUsers) {
+            res.render("secrets", {usersWithSecrets: foundUsers});
+        }
+    } catch (err) {
+        console.log(err);
+    }
+});
+
+app.get("/submit", function(req, res){
     if(req.isAuthenticated()){
-        res.render("secrets");
+        res.render("submit");
     } else{
         res.redirect("/login");
+    }
+});
+
+app.post("/submit", async function(req, res){
+    const submittedSecret = req.body.secret;
+    const userId = req.user.id;
+    
+    try {
+        const foundUser = await User.findById(userId);
+        if (foundUser) {
+            foundUser.secret = submittedSecret;
+            await foundUser.save();
+            res.redirect("/secrets");
+        }
+    } catch (err) {
+        console.log(err);
     }
 });
 
@@ -118,8 +145,7 @@ app.post("/register", function(req, res){
                 res.redirect("/secrets");
             })
         }
-    })
-    
+    });    
 });
 
 app.post("/login", async function(req, res){
